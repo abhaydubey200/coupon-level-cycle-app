@@ -1,16 +1,13 @@
 import streamlit as st
 import pandas as pd
 
-# -----------------------------
-# Page Configuration
-# -----------------------------
 st.set_page_config(
     page_title="Coupon Cycle & Level Calculator",
-    page_icon="🎟️",
+    page_icon=" ",
     layout="wide"
 )
 
-st.title("🎟️ Coupon Cycle & Level Calculator")
+st.title(" Coupon Cycle & Level Calculator")
 st.write("Upload your dataset to calculate **Cycle** and **Level** based on coupon cards.")
 
 # -----------------------------
@@ -21,9 +18,6 @@ uploaded_file = st.file_uploader(
     type=["csv"]
 )
 
-# -----------------------------
-# Core Logic Functions
-# -----------------------------
 def calculate_cycle(coupon_cards):
     if coupon_cards <= 40:
         return "N/A"
@@ -35,9 +29,6 @@ def calculate_level(coupon_cards):
         return int((coupon_cards - 1) / 6)
     return int(((coupon_cards - 1) % 40) / 6)
 
-# -----------------------------
-# Main Processing
-# -----------------------------
 if uploaded_file is not None:
     try:
         df = pd.read_csv(uploaded_file)
@@ -54,19 +45,14 @@ if uploaded_file is not None:
                 f"CSV must contain columns: {', '.join(required_columns)}"
             )
         else:
-            # Filter invalid values
             df = df[
                 (df["coupon_cards"] >= 1) &
                 (df["coupon_cards"] <= 1400)
             ]
 
-            # Calculate Cycle & Level
             df["cycle"] = df["coupon_cards"].apply(calculate_cycle)
             df["level"] = df["coupon_cards"].apply(calculate_level)
 
-            # -----------------------------
-            # Coupon Cards Filter
-            # -----------------------------
             min_card, max_card = st.slider(
                 "Filter by Coupon Cards",
                 min_value=1,
@@ -79,10 +65,7 @@ if uploaded_file is not None:
                 (df["coupon_cards"] <= max_card)
             ]
 
-            # -----------------------------
-            # Final Output
-            # -----------------------------
-            st.subheader("📊 Final Output")
+            st.subheader("Final Output")
 
             st.dataframe(
                 filtered_df[
@@ -97,12 +80,9 @@ if uploaded_file is not None:
                 use_container_width=True
             )
 
-            # -----------------------------
-            # Download Option
-            # -----------------------------
             csv = filtered_df.to_csv(index=False).encode("utf-8")
             st.download_button(
-                label="⬇️ Download Result CSV",
+                label=" Download Result CSV",
                 data=csv,
                 file_name="cycle_level_output.csv",
                 mime="text/csv"
