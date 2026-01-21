@@ -3,24 +3,18 @@ import pandas as pd
 
 st.set_page_config(
     page_title="Coupon Cycle & Level Calculator",
-    page_icon="📊",
+    page_icon="",
     layout="wide"
 )
 
-st.title("📊 Coupon Cycle & Level Calculator")
+st.title(" Coupon Cycle & Level Calculator")
 st.write("Upload your dataset to calculate **Cycle**, **Level**, and analyze distributions.")
 
-# -----------------------------
-# File Upload
-# -----------------------------
 uploaded_file = st.file_uploader(
     "Upload CSV file",
     type=["csv"]
 )
 
-# -----------------------------
-# BUSINESS LOGIC (TABLEAU MATCH)
-# -----------------------------
 def calculate_cycle(coupon_cards):
     return int((coupon_cards - 1) / 40) + 1
 
@@ -69,9 +63,6 @@ if uploaded_file is not None:
             df["level"] = df["coupon_cards"].apply(calculate_level)
             df["cycle_level"] = df["cycle"].astype(str) + "-" + df["level"].astype(str)
 
-            # -----------------------------
-            # Filters
-            # -----------------------------
             min_card, max_card = st.slider(
                 "Filter by Coupon Cards",
                 min_value=1,
@@ -84,11 +75,8 @@ if uploaded_file is not None:
                 (df["coupon_cards"] <= max_card)
             ]
 
-            # -----------------------------
-            # User Search
-            # -----------------------------
             search = st.text_input(
-                "🔍 Search by Username or Phone Number"
+                "Search by Username or Phone Number"
             )
 
             if search:
@@ -97,34 +85,9 @@ if uploaded_file is not None:
                     filtered_df["phone_number"].astype(str).str.contains(search, case=False, na=False)
                 ]
 
-            # -----------------------------
-            # KPI CARDS
-            # -----------------------------
-            st.subheader("📌 KPIs")
-
-            col1, col2 = st.columns(2)
-
-            with col1:
-                st.metric(
-                    label="Total Users",
-                    value=filtered_df["username"].nunique()
                 )
 
-            with col2:
-                max_cycle_level = (
-                    filtered_df.sort_values(["cycle", "level"], ascending=False)
-                    .iloc[0]["cycle_level"]
-                    if not filtered_df.empty else "N/A"
-                )
-                st.metric(
-                    label="Max Cycle-Level",
-                    value=max_cycle_level
-                )
-
-            # -----------------------------
-            # Final Output (Hide / Unhide)
-            # -----------------------------
-            st.subheader("📄 Final Output")
+            st.subheader(" Final Output")
 
             show_table = st.checkbox("Show Table", value=True)
 
@@ -143,10 +106,7 @@ if uploaded_file is not None:
                     use_container_width=True
                 )
 
-            # -----------------------------
-            # Charts
-            # -----------------------------
-            st.subheader("📊 Analytics")
+            st.subheader(" Analytics")
 
             col1, col2 = st.columns(2)
 
@@ -167,12 +127,9 @@ if uploaded_file is not None:
                 filtered_df.groupby("cycle_level").size().sort_index()
             )
 
-            # -----------------------------
-            # Download
-            # -----------------------------
             csv = filtered_df.to_csv(index=False).encode("utf-8")
             st.download_button(
-                label="⬇️ Download Result CSV",
+                label=" Download Result CSV",
                 data=csv,
                 file_name="cycle_level_output.csv",
                 mime="text/csv"
@@ -182,4 +139,4 @@ if uploaded_file is not None:
         st.error(f"Error processing file: {e}")
 
 else:
-    st.info("⬆️ Upload a CSV file to get started.")
+    st.info(" Upload a CSV file to get started.")
