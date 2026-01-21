@@ -1,20 +1,26 @@
 import streamlit as st
 import pandas as pd
+import altair as alt
 
+# -----------------------------
+# Page Config
+# -----------------------------
 st.set_page_config(
     page_title="Coupon Cycle & Level Calculator",
-    page_icon=" ",
     layout="wide"
 )
 
-st.title(" Coupon Cycle & Level Calculator")
-st.write("Upload your dataset to calculate **Cycle**, **Level**, and analyze distributions.")
+st.title("🎟️ Coupon Cycle & Level Calculator")
+st.write("Upload CSV to calculate **Cycle**, **Level**, and **Cycle_Level**")
 
-uploaded_file = st.file_uploader(
-    "Upload CSV file",
-    type=["csv"]
-)
+# -----------------------------
+# File Upload
+# -----------------------------
+uploaded_file = st.file_uploader("Upload CSV file", type=["csv"])
 
+# -----------------------------
+# Business Logic (Tableau-aligned)
+# -----------------------------
 def calculate_cycle(coupon_cards):
     return int((coupon_cards - 1) / 40) + 1
 
@@ -38,101 +44,148 @@ def calculate_level(coupon_cards):
         return 6
 
 
+# -----------------------------
+# Main App
+# -----------------------------
 if uploaded_file is not None:
-    try:
-        df = pd.read_csv(uploaded_file)
+    df = pd.read_csv(uploaded_file)
 
-        required_columns = {
-            "user_id",
-            "username",
-            "phone_number",
-            "coupon_cards"
-        }
+    required_columns = {
+        "username",
+        "phone_number",
+        "coupon_cards"
+    }
 
-        if not required_columns.issubset(df.columns):
-            st.error(
-                f"CSV must contain columns: {', '.join(required_columns)}"
-            )
-        else:
-            df = df[
-                (df["coupon_cards"] >= 1) &
-                (df["coupon_cards"] <= 1400)
-            ]
+    if not required_columns.issubset(df.columns):
+        st.error(f"CSV must contain columns: {', '.join(required_columns)}")
+        st.stop()
 
-            df["cycle"] = df["coupon_cards"].apply(calculate_cycle)
-            df["level"] = df["coupon_cards"].apply(calculate_level)
-            df["cycle_level"] = df["cycle"].astype(str) + "-" + df["level"].astype(str)
+    # Clean data
+    df = df[(df["coupon_cards"] >= 1) & (df["coupon_cards"] <= 1400)]
 
-            min_card, max_card = st.slider(
-                "Filter by Coupon Cards",
-                min_value=1,
-                max_value=1400,
-                value=(1, 1400)
-            )
+    # Calculations
+    df["cycle"] = df["coupon_cards"].apply(calculate_cycle)
+    df["level"] = df["coupon_cards"].apply(calculate_level)
+    df["cycle_level"] = df["cycle"].astype(str) + "-" + df["level"].astype(str)
 
-            filtered_df = df[
-                (df["coupon_cards"] >= min_card) &
-                (df["coupon_cards"] <= max_card)
-            ]
+    # -----------------------------
+    # Search
+    # -----------------------------
+    st.subheader("🔍 User Search")
 
-            search = st.text_input(" Search by Username or Phone Number")
+    search_text = st.text_input(
+        "Search by Username or Phone Number"
+    )
 
-            if search:
-                filtered_df = filtered_df[
-                    filtered_df["username"].str.contains(search, case=False, na=False) |
-                    filtered_df["phone_number"].astype(str).str.contains(search, case=False, na=False)
+    if search_text:
+        df = df[
+            df["username"].str.contains(search_text, case=False, na=False) |
+            df["phone_number"].astype(str).str.contains(search_text, na=False)
+        ]
+
+    # -----------------------------
+    # Charts
+    # -----------------------------
+    st.subheader("📊 Analytics")
+
+    # Users per Cycle
+    cycle_df = (
+        df.groupby("cycle")["username"]
+        .agg(
+            user_count="nunique",
+            users=lambda x: ", ".join(sorted(x.unique()))
+        )
+        .reset_index()
+    )
+
+    cycle_chart = alt.Chart(cycle_df).mark_bar().encode(
+        x=alt.X("cycle:O", title="Cycle"),
+        y=alt.Y("user_count:Q", title="Users"),
+        tooltip=[
+            alt.Tooltip("cycle:O", title="Cycle"),
+            alt.Tooltip("user_count:Q", title="Total Users"),
+            alt.Tooltip("users:N", title="Usernames")
+        ]
+    ).properties(height=350)
+
+    st.altair_chart(cycle_chart, use_container_width=True)
+
+    # Users per Level
+    level_df = (
+        df.groupby("level")["username"]
+        .agg(
+            user_count="nunique",
+            users=lambda x: ", ".join(sorted(x.unique()))
+        )
+        .reset_index()
+    )
+
+    level_chart = alt.Chart(level_df).mark_bar().encode(
+        x=alt.X("level:O", title="Level"),
+        y=alt.Y("user_count:Q", title="Users"),
+        tooltip=[
+            alt.Tooltip("level:O", title="Level"),
+            alt.Tooltip("user_count:Q", title="Total Users"),
+            alt.Tooltip("users:N", title="Usernames")
+        ]
+    ).properties(height=350)
+
+    st.altair_chart(level_chart, use_container_width=True)
+
+    # Users per Cycle-Level
+    cl_df = (
+        df.groupby("cycle_level")["username"]
+        .agg(
+            user_count="nunique",
+            users=lambda x: ", ".join(sorted(x.unique()))
+        )
+        .reset_index()
+    )
+
+    cl_chart = alt.Chart(cl_df).mark_bar().encode(
+        x=alt.X("cycle_level:O", title="Cycle-Level", sort=None),
+        y=alt.Y("user_count:Q", title="Users"),
+        tooltip=[
+            alt.Tooltip("cycle_level:O", title="Cycle-Level"),
+            alt.Tooltip("user_count:Q", title="Total Users"),
+            alt.Tooltip("users:N", title="Usernames")
+        ]
+    ).properties(height=400)
+
+    st.altair_chart(cl_chart, use_container_width=True)
+
+    # -----------------------------
+    # Final Output Table
+    # -----------------------------
+    st.subheader("📋 Final Output")
+
+    show_table = st.checkbox("Show / Hide Table", value=True)
+
+    if show_table:
+        st.dataframe(
+            df[
+                [
+                    "username",
+                    "phone_number",
+                    "coupon_cards",
+                    "cycle",
+                    "level",
+                    "cycle_level"
                 ]
+            ],
+            use_container_width=True
+        )
 
-            st.subheader(" Final Output")
-
-            show_table = st.checkbox("Show Table", value=True)
-
-            if show_table:
-                st.dataframe(
-                    filtered_df[
-                        [
-                            "username",
-                            "phone_number",
-                            "coupon_cards",
-                            "cycle",
-                            "level",
-                            "cycle_level"
-                        ]
-                    ],
-                    use_container_width=True
-                )
-
-            st.subheader(" Analytics (User-based)")
-
-            col1, col2 = st.columns(2)
-
-            with col1:
-                st.markdown("**Users per Cycle**")
-                st.bar_chart(
-                    filtered_df.groupby("cycle")["username"].nunique()
-                )
-
-            with col2:
-                st.markdown("**Users per Level**")
-                st.bar_chart(
-                    filtered_df.groupby("level")["username"].nunique()
-                )
-
-            st.markdown("**Users per Cycle–Level**")
-            st.bar_chart(
-                filtered_df.groupby("cycle_level")["username"].nunique().sort_index()
-            )
-
-            csv = filtered_df.to_csv(index=False).encode("utf-8")
-            st.download_button(
-                label=" Download Result CSV",
-                data=csv,
-                file_name="cycle_level_output.csv",
-                mime="text/csv"
-            )
-
-    except Exception as e:
-        st.error(f"Error processing file: {e}")
+    # -----------------------------
+    # Download
+    # -----------------------------
+    csv = df.to_csv(index=False).encode("utf-8")
+    st.download_button(
+        "⬇️ Download Result CSV",
+        csv,
+        "cycle_level_output.csv",
+        "text/csv"
+    )
 
 else:
-    st.info(" Upload a CSV file to get started.")
+    st.info("⬆️ Upload a CSV file to begin")
