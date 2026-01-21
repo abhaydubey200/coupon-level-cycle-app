@@ -7,7 +7,7 @@ st.set_page_config(
     layout="wide"
 )
 
-st.title("Coupon Cycle & Level Calculator")
+st.title(" Coupon Cycle & Level Calculator")
 st.write("Upload your dataset to calculate **Cycle**, **Level**, and analyze distributions.")
 
 uploaded_file = st.file_uploader(
@@ -75,9 +75,7 @@ if uploaded_file is not None:
                 (df["coupon_cards"] <= max_card)
             ]
 
-            search = st.text_input(
-                " Search by Username or Phone Number"
-            )
+            search = st.text_input(" Search by Username or Phone Number")
 
             if search:
                 filtered_df = filtered_df[
@@ -104,25 +102,25 @@ if uploaded_file is not None:
                     use_container_width=True
                 )
 
-            st.subheader(" Analytics")
+            st.subheader(" Analytics (User-based)")
 
             col1, col2 = st.columns(2)
 
             with col1:
                 st.markdown("**Users per Cycle**")
                 st.bar_chart(
-                    filtered_df.groupby("cycle").size()
+                    filtered_df.groupby("cycle")["username"].nunique()
                 )
 
             with col2:
                 st.markdown("**Users per Level**")
                 st.bar_chart(
-                    filtered_df.groupby("level").size()
+                    filtered_df.groupby("level")["username"].nunique()
                 )
 
             st.markdown("**Users per Cycle–Level**")
             st.bar_chart(
-                filtered_df.groupby("cycle_level").size().sort_index()
+                filtered_df.groupby("cycle_level")["username"].nunique().sort_index()
             )
 
             csv = filtered_df.to_csv(index=False).encode("utf-8")
