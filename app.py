@@ -90,11 +90,16 @@ except Exception as e:
 # ==================================================
 # VALIDATE DATA
 # ==================================================
-REQUIRED_COLUMNS = {"id", "username", "phone_number", "coupon_cards"}
+REQUIRED_COLUMNS = {
+    "user_id",
+    "username",
+    "phone_number",
+    "coupon_cards"
+}
 
 if not REQUIRED_COLUMNS.issubset(df.columns):
     st.error(
-        f"Dataset must contain the following columns:\n{', '.join(REQUIRED_COLUMNS)}"
+        f"Dataset must contain these columns:\n{', '.join(REQUIRED_COLUMNS)}"
     )
     st.stop()
 
