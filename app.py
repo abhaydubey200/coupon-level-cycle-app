@@ -3,11 +3,11 @@ import pandas as pd
 
 st.set_page_config(
     page_title="Coupon Cycle & Level Calculator",
-    page_icon="",
+    page_icon=" ",
     layout="wide"
 )
 
-st.title(" Coupon Cycle & Level Calculator")
+st.title("Coupon Cycle & Level Calculator")
 st.write("Upload your dataset to calculate **Cycle**, **Level**, and analyze distributions.")
 
 uploaded_file = st.file_uploader(
@@ -76,7 +76,7 @@ if uploaded_file is not None:
             ]
 
             search = st.text_input(
-                "Search by Username or Phone Number"
+                " Search by Username or Phone Number"
             )
 
             if search:
@@ -84,8 +84,6 @@ if uploaded_file is not None:
                     filtered_df["username"].str.contains(search, case=False, na=False) |
                     filtered_df["phone_number"].astype(str).str.contains(search, case=False, na=False)
                 ]
-
-                )
 
             st.subheader(" Final Output")
 
