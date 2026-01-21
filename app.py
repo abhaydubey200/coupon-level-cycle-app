@@ -6,14 +6,14 @@ import pandas as pd
 # ==================================================
 st.set_page_config(
     page_title="Coupon Level & Cycle Distribution",
-    page_icon="🎁",
+    page_icon="",
     layout="wide"
 )
 
 # ==================================================
 # HEADER
 # ==================================================
-st.title("🎁 Coupon Level & Cycle Distribution System")
+st.title(" Coupon Level & Cycle Distribution System")
 st.markdown(
     "Upload a CSV or Excel file and automatically assign **Cycle** and **Level** "
     "based on coupon card logic."
@@ -67,7 +67,7 @@ def calculate_level(coupon: int):
 # FILE UPLOAD
 # ==================================================
 uploaded_file = st.file_uploader(
-    "📂 Upload CSV or Excel file",
+    " Upload CSV or Excel file",
     type=["csv", "xlsx"]
 )
 
@@ -108,13 +108,13 @@ df = df.copy()
 # ==================================================
 # RAW DATA PREVIEW
 # ==================================================
-with st.expander("🔍 Preview Raw Data"):
+with st.expander(" Preview Raw Data"):
     st.dataframe(df.head(100))
 
 # ==================================================
 # FILTER SECTION
 # ==================================================
-st.subheader("🎯 Filter Coupon Cards")
+st.subheader(" Filter Coupon Cards")
 
 min_coupon = int(df["coupon_cards"].min())
 max_coupon = int(df["coupon_cards"].max())
@@ -140,7 +140,7 @@ filtered_df["Level"] = filtered_df["coupon_cards"].apply(calculate_level)
 # ==================================================
 # KPI METRICS
 # ==================================================
-st.subheader("📊 Summary Metrics")
+st.subheader(" Summary Metrics")
 
 col1, col2, col3, col4 = st.columns(4)
 
@@ -152,14 +152,14 @@ col4.metric("Max Level", filtered_df["Level"].max())
 # ==================================================
 # RESULT TABLE
 # ==================================================
-st.subheader("✅ Final Output")
+st.subheader(" Final Output")
 
 st.dataframe(filtered_df, use_container_width=True)
 
 # ==================================================
 # DOWNLOAD
 # ==================================================
-st.subheader("⬇️ Download Result")
+st.subheader(" Download Result")
 
 output_csv = filtered_df.to_csv(index=False)
 
