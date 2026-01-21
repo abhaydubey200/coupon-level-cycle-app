@@ -1,177 +1,115 @@
 import streamlit as st
 import pandas as pd
 
-# ==================================================
-# PAGE CONFIG
-# ==================================================
+# -----------------------------
+# Page Configuration
+# -----------------------------
 st.set_page_config(
-    page_title="Coupon Level & Cycle Distribution",
-    page_icon="",
+    page_title="Coupon Cycle & Level Calculator",
+    page_icon="🎟️",
     layout="wide"
 )
 
-# ==================================================
-# HEADER
-# ==================================================
-st.title(" Coupon Level & Cycle Distribution System")
-st.markdown(
-    "Upload a CSV or Excel file and automatically assign **Cycle** and **Level** "
-    "based on coupon card logic."
-)
+st.title("🎟️ Coupon Cycle & Level Calculator")
+st.write("Upload your dataset to calculate **Cycle** and **Level** based on coupon cards.")
 
-# ==================================================
-# BUSINESS LOGIC
-# ==================================================
-def calculate_cycle(coupon: int):
-    """
-    Cycle logic:
-    - Coupons < 41 → NA
-    - Every 41 coupons form a new cycle
-    """
-    if coupon < 41:
-        return "NA"
-    return ((coupon - 1) // 41) + 1
-
-
-def calculate_level(coupon: int):
-    """
-    Level logic (repeats in every cycle):
-    1–5   → 0
-    6–11  → 1
-    12–17 → 2
-    18–23 → 3
-    24–29 → 4
-    30–39 → 5
-    40    → 6
-    """
-    position = coupon % 41
-    if position == 0:
-        position = 41
-
-    if position <= 5:
-        return 0
-    elif position <= 11:
-        return 1
-    elif position <= 17:
-        return 2
-    elif position <= 23:
-        return 3
-    elif position <= 29:
-        return 4
-    elif position <= 39:
-        return 5
-    else:
-        return 6
-
-# ==================================================
-# FILE UPLOAD
-# ==================================================
+# -----------------------------
+# File Upload
+# -----------------------------
 uploaded_file = st.file_uploader(
-    " Upload CSV or Excel file",
-    type=["csv", "xlsx"]
+    "Upload CSV file",
+    type=["csv"]
 )
 
-if uploaded_file is None:
-    st.info("Upload a file to continue.")
-    st.stop()
+# -----------------------------
+# Core Logic Functions
+# -----------------------------
+def calculate_cycle(coupon_cards):
+    if coupon_cards <= 40:
+        return "N/A"
+    return int((coupon_cards - 1) / 40) + 1
 
-# ==================================================
-# READ FILE
-# ==================================================
-try:
-    if uploaded_file.name.endswith(".csv"):
+
+def calculate_level(coupon_cards):
+    if coupon_cards <= 40:
+        return int((coupon_cards - 1) / 6)
+    return int(((coupon_cards - 1) % 40) / 6)
+
+# -----------------------------
+# Main Processing
+# -----------------------------
+if uploaded_file is not None:
+    try:
         df = pd.read_csv(uploaded_file)
-    else:
-        df = pd.read_excel(uploaded_file)
-except Exception as e:
-    st.error(f"Error reading file: {e}")
-    st.stop()
 
-# ==================================================
-# VALIDATE DATA
-# ==================================================
-REQUIRED_COLUMNS = {
-    "user_id",
-    "username",
-    "phone_number",
-    "coupon_cards"
-}
+        required_columns = {
+            "user_id",
+            "username",
+            "phone_number",
+            "coupon_cards"
+        }
 
-if not REQUIRED_COLUMNS.issubset(df.columns):
-    st.error(
-        f"Dataset must contain these columns:\n{', '.join(REQUIRED_COLUMNS)}"
-    )
-    st.stop()
+        if not required_columns.issubset(df.columns):
+            st.error(
+                f"CSV must contain columns: {', '.join(required_columns)}"
+            )
+        else:
+            # Filter invalid values
+            df = df[
+                (df["coupon_cards"] >= 1) &
+                (df["coupon_cards"] <= 1400)
+            ]
 
-df = df.copy()
+            # Calculate Cycle & Level
+            df["cycle"] = df["coupon_cards"].apply(calculate_cycle)
+            df["level"] = df["coupon_cards"].apply(calculate_level)
 
-# ==================================================
-# RAW DATA PREVIEW
-# ==================================================
-with st.expander(" Preview Raw Data"):
-    st.dataframe(df.head(100))
+            # -----------------------------
+            # Coupon Cards Filter
+            # -----------------------------
+            min_card, max_card = st.slider(
+                "Filter by Coupon Cards",
+                min_value=1,
+                max_value=1400,
+                value=(1, 1400)
+            )
 
-# ==================================================
-# FILTER SECTION
-# ==================================================
-st.subheader(" Filter Coupon Cards")
+            filtered_df = df[
+                (df["coupon_cards"] >= min_card) &
+                (df["coupon_cards"] <= max_card)
+            ]
 
-min_coupon = int(df["coupon_cards"].min())
-max_coupon = int(df["coupon_cards"].max())
+            # -----------------------------
+            # Final Output
+            # -----------------------------
+            st.subheader("📊 Final Output")
 
-coupon_range = st.slider(
-    "Select coupon card range",
-    min_value=min_coupon,
-    max_value=max_coupon,
-    value=(min_coupon, max_coupon)
-)
+            st.dataframe(
+                filtered_df[
+                    [
+                        "username",
+                        "phone_number",
+                        "coupon_cards",
+                        "cycle",
+                        "level"
+                    ]
+                ],
+                use_container_width=True
+            )
 
-filtered_df = df[
-    (df["coupon_cards"] >= coupon_range[0]) &
-    (df["coupon_cards"] <= coupon_range[1])
-].copy()
+            # -----------------------------
+            # Download Option
+            # -----------------------------
+            csv = filtered_df.to_csv(index=False).encode("utf-8")
+            st.download_button(
+                label="⬇️ Download Result CSV",
+                data=csv,
+                file_name="cycle_level_output.csv",
+                mime="text/csv"
+            )
 
-# ==================================================
-# APPLY LOGIC
-# ==================================================
-filtered_df["Cycle"] = filtered_df["coupon_cards"].apply(calculate_cycle)
-filtered_df["Level"] = filtered_df["coupon_cards"].apply(calculate_level)
+    except Exception as e:
+        st.error(f"Error processing file: {e}")
 
-# ==================================================
-# KPI METRICS
-# ==================================================
-st.subheader(" Summary Metrics")
-
-col1, col2, col3, col4 = st.columns(4)
-
-col1.metric("Total Users", len(filtered_df))
-col2.metric("Min Coupons", filtered_df["coupon_cards"].min())
-col3.metric("Max Coupons", filtered_df["coupon_cards"].max())
-col4.metric("Max Level", filtered_df["Level"].max())
-
-# ==================================================
-# RESULT TABLE
-# ==================================================
-st.subheader(" Final Output")
-
-st.dataframe(filtered_df, use_container_width=True)
-
-# ==================================================
-# DOWNLOAD
-# ==================================================
-st.subheader(" Download Result")
-
-output_csv = filtered_df.to_csv(index=False)
-
-st.download_button(
-    label="Download CSV",
-    data=output_csv,
-    file_name="coupon_level_cycle_output.csv",
-    mime="text/csv"
-)
-
-# ==================================================
-# FOOTER
-# ==================================================
-st.markdown("---")
-st.caption("Production-ready Streamlit app for Coupon / Loyalty Systems")
+else:
+    st.info("👆 Upload a CSV file to get started.")
