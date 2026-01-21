@@ -2,25 +2,16 @@ import streamlit as st
 import pandas as pd
 import altair as alt
 
-# -----------------------------
-# Page Config
-# -----------------------------
 st.set_page_config(
     page_title="Coupon Cycle & Level Calculator",
     layout="wide"
 )
 
-st.title("🎟️ Coupon Cycle & Level Calculator")
+st.title(" Coupon Cycle & Level Calculator")
 st.write("Upload CSV to calculate **Cycle**, **Level**, and **Cycle_Level**")
 
-# -----------------------------
-# File Upload
-# -----------------------------
 uploaded_file = st.file_uploader("Upload CSV file", type=["csv"])
 
-# -----------------------------
-# Business Logic (Tableau-aligned)
-# -----------------------------
 def calculate_cycle(coupon_cards):
     return int((coupon_cards - 1) / 40) + 1
 
@@ -44,9 +35,6 @@ def calculate_level(coupon_cards):
         return 6
 
 
-# -----------------------------
-# Main App
-# -----------------------------
 if uploaded_file is not None:
     df = pd.read_csv(uploaded_file)
 
@@ -60,18 +48,27 @@ if uploaded_file is not None:
         st.error(f"CSV must contain columns: {', '.join(required_columns)}")
         st.stop()
 
-    # Clean data
     df = df[(df["coupon_cards"] >= 1) & (df["coupon_cards"] <= 1400)]
 
-    # Calculations
     df["cycle"] = df["coupon_cards"].apply(calculate_cycle)
     df["level"] = df["coupon_cards"].apply(calculate_level)
     df["cycle_level"] = df["cycle"].astype(str) + "-" + df["level"].astype(str)
 
-    # -----------------------------
-    # Search
-    # -----------------------------
-    st.subheader("🔍 User Search")
+    st.subheader(" Filters")
+
+    min_card, max_card = st.slider(
+        "Filter by Coupon Cards",
+        min_value=1,
+        max_value=1400,
+        value=(1, 1400)
+    )
+
+    df = df[
+        (df["coupon_cards"] >= min_card) &
+        (df["coupon_cards"] <= max_card)
+    ]
+
+    st.subheader(" User Search")
 
     search_text = st.text_input(
         "Search by Username or Phone Number"
@@ -83,12 +80,9 @@ if uploaded_file is not None:
             df["phone_number"].astype(str).str.contains(search_text, na=False)
         ]
 
-    # -----------------------------
-    # Charts
-    # -----------------------------
-    st.subheader("📊 Analytics")
+    st.subheader(" Analytics")
 
-    # Users per Cycle
+
     cycle_df = (
         df.groupby("cycle")["username"]
         .agg(
@@ -110,7 +104,7 @@ if uploaded_file is not None:
 
     st.altair_chart(cycle_chart, use_container_width=True)
 
-    # Users per Level
+
     level_df = (
         df.groupby("level")["username"]
         .agg(
@@ -132,7 +126,6 @@ if uploaded_file is not None:
 
     st.altair_chart(level_chart, use_container_width=True)
 
-    # Users per Cycle-Level
     cl_df = (
         df.groupby("cycle_level")["username"]
         .agg(
@@ -154,10 +147,7 @@ if uploaded_file is not None:
 
     st.altair_chart(cl_chart, use_container_width=True)
 
-    # -----------------------------
-    # Final Output Table
-    # -----------------------------
-    st.subheader("📋 Final Output")
+    st.subheader(" Final Output")
 
     show_table = st.checkbox("Show / Hide Table", value=True)
 
@@ -176,16 +166,13 @@ if uploaded_file is not None:
             use_container_width=True
         )
 
-    # -----------------------------
-    # Download
-    # -----------------------------
     csv = df.to_csv(index=False).encode("utf-8")
     st.download_button(
-        "⬇️ Download Result CSV",
+        " Download Result CSV",
         csv,
         "cycle_level_output.csv",
         "text/csv"
     )
 
 else:
-    st.info("⬆️ Upload a CSV file to begin")
+    st.info("Upload a CSV file to begin")
