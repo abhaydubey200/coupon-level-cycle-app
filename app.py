@@ -3,18 +3,24 @@ import pandas as pd
 
 st.set_page_config(
     page_title="Coupon Cycle & Level Calculator",
-    page_icon=" ",
+    page_icon="📊",
     layout="wide"
 )
 
-st.title(" Coupon Cycle & Level Calculator")
-st.write("Upload your dataset to calculate **Cycle** and **Level** based on coupon cards.")
+st.title("📊 Coupon Cycle & Level Calculator")
+st.write("Upload your dataset to calculate **Cycle**, **Level**, and analyze distributions.")
 
+# -----------------------------
+# File Upload
+# -----------------------------
 uploaded_file = st.file_uploader(
     "Upload CSV file",
     type=["csv"]
 )
 
+# -----------------------------
+# BUSINESS LOGIC (TABLEAU MATCH)
+# -----------------------------
 def calculate_cycle(coupon_cards):
     return int((coupon_cards - 1) / 40) + 1
 
@@ -54,14 +60,22 @@ if uploaded_file is not None:
                 f"CSV must contain columns: {', '.join(required_columns)}"
             )
         else:
+            # Valid range
             df = df[
                 (df["coupon_cards"] >= 1) &
                 (df["coupon_cards"] <= 1400)
             ]
 
+            # Calculated fields
             df["cycle"] = df["coupon_cards"].apply(calculate_cycle)
             df["level"] = df["coupon_cards"].apply(calculate_level)
 
+            # Combined field
+            df["cycle_level"] = df["cycle"].astype(str) + "-" + df["level"].astype(str)
+
+            # -----------------------------
+            # Filter
+            # -----------------------------
             min_card, max_card = st.slider(
                 "Filter by Coupon Cards",
                 min_value=1,
@@ -74,7 +88,10 @@ if uploaded_file is not None:
                 (df["coupon_cards"] <= max_card)
             ]
 
-            st.subheader("Final Output")
+            # -----------------------------
+            # Final Table
+            # -----------------------------
+            st.subheader("📄 Final Output")
 
             st.dataframe(
                 filtered_df[
@@ -83,15 +100,53 @@ if uploaded_file is not None:
                         "phone_number",
                         "coupon_cards",
                         "cycle",
-                        "level"
+                        "level",
+                        "cycle_level"
                     ]
                 ],
                 use_container_width=True
             )
 
+            # -----------------------------
+            # Charts
+            # -----------------------------
+            st.subheader("📊 Analytics")
+
+            col1, col2 = st.columns(2)
+
+            with col1:
+                st.markdown("**Users per Cycle**")
+                cycle_chart = (
+                    filtered_df.groupby("cycle")
+                    .size()
+                    .reset_index(name="users")
+                )
+                st.bar_chart(cycle_chart.set_index("cycle"))
+
+            with col2:
+                st.markdown("**Users per Level**")
+                level_chart = (
+                    filtered_df.groupby("level")
+                    .size()
+                    .reset_index(name="users")
+                )
+                st.bar_chart(level_chart.set_index("level"))
+
+            st.markdown("**Users per Cycle–Level**")
+            cycle_level_chart = (
+                filtered_df.groupby("cycle_level")
+                .size()
+                .reset_index(name="users")
+                .sort_values("cycle_level")
+            )
+            st.bar_chart(cycle_level_chart.set_index("cycle_level"))
+
+            # -----------------------------
+            # Download
+            # -----------------------------
             csv = filtered_df.to_csv(index=False).encode("utf-8")
             st.download_button(
-                label=" Download Result CSV",
+                label="⬇️ Download Result CSV",
                 data=csv,
                 file_name="cycle_level_output.csv",
                 mime="text/csv"
@@ -101,4 +156,4 @@ if uploaded_file is not None:
         st.error(f"Error processing file: {e}")
 
 else:
-    st.info(" Upload a CSV file to get started.")
+    st.info("⬆️ Upload a CSV file to get started.")
