@@ -92,4 +92,4 @@ if uploaded_file is not None:
         st.error(f"Error processing file: {e}")
 
 else:
-    st.info("👆 Upload a CSV file to get started.")
+    st.info(" Upload a CSV file to get started.")
