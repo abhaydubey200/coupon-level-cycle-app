@@ -10,17 +10,11 @@ st.set_page_config(
 st.title(" Coupon Cycle & Level Calculator")
 st.write("Upload your dataset to calculate **Cycle** and **Level** based on coupon cards.")
 
-# -----------------------------
-# File Upload
-# -----------------------------
 uploaded_file = st.file_uploader(
     "Upload CSV file",
     type=["csv"]
 )
 
-# -----------------------------
-# FIXED LOGIC (TABLEAU MATCH)
-# -----------------------------
 def calculate_cycle(coupon_cards):
     return int((coupon_cards - 1) / 40) + 1
 
