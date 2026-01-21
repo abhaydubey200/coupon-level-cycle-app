@@ -18,16 +18,31 @@ uploaded_file = st.file_uploader(
     type=["csv"]
 )
 
+# -----------------------------
+# FIXED LOGIC (TABLEAU MATCH)
+# -----------------------------
 def calculate_cycle(coupon_cards):
-    if coupon_cards <= 40:
-        return "N/A"
     return int((coupon_cards - 1) / 40) + 1
 
 
 def calculate_level(coupon_cards):
-    if coupon_cards <= 40:
-        return int((coupon_cards - 1) / 6)
-    return int(((coupon_cards - 1) % 40) / 6)
+    pos = ((coupon_cards - 1) % 40) + 1
+
+    if pos <= 5:
+        return 0
+    elif pos <= 11:
+        return 1
+    elif pos <= 17:
+        return 2
+    elif pos <= 23:
+        return 3
+    elif pos <= 29:
+        return 4
+    elif pos <= 39:
+        return 5
+    else:
+        return 6
+
 
 if uploaded_file is not None:
     try:
